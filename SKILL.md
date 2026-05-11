@@ -88,21 +88,29 @@ Check every review for these, in priority order:
 7. **Tests** — Business logic changed or added without tests? Flag missing
    test coverage.
 8. **Over-engineering** — Premature abstractions, YAGNI violations?
-9. **Future pain** — Will this force manual steps every time something is added?
+9. **Defensive code** — Flag runtime guards that the type system or OOP design
+   should make unnecessary: redundant null/undefined checks, re-validating
+   well-typed inputs inside callers, "just in case" try/catches, parameter
+   shape checks on internal calls. Push validation to true boundaries (user
+   input, external APIs, deserialization). If a value can be invalid here,
+   the fix is usually a better type, constructor, or factory that makes
+   invalid states unrepresentable — not another `if`.
+10. **Future pain** — Will this force manual steps every time something is added?
    (e.g., enums requiring migrations, lists requiring remembering to update)
    - **Postgres enums** — flag every time. Adding a value forces a DB migration,
      renaming/removing is even worse. Suggest `text` + a `CHECK` constraint, or
      a lookup table. Application-level enums (Rails, Ecto, etc.) backed by
-     `text`/`varchar` are fine — the cost is on the Postgres `CREATE TYPE` kind.
-10. **Refactoring opportunities** — Existing code that could be improved while
+     `text`/`varchar` are fine. The cost is on the Postgres `CREATE TYPE` kind.
+11. **Refactoring opportunities** — Existing code that could be improved while
     we're here
-11. **AI slop** — Code that looks suspiciously generated: over-commented, overly
-    defensive, unnecessary abstractions, generic variable names, boilerplate
-    that adds nothing. Specific tells: 30-line block comments explaining a
-    3-line constant; comments that say WHY NOT instead of restructuring the
-    code so the why-not doesn't exist; `// Note:` prefixes; comments that
-    restate the variable name in prose.
-12. **Performance/Security** — Only when it's a real and present concern, not
+12. **AI slop** — Code that looks suspiciously generated: over-commented,
+    unnecessary abstractions, generic variable names, boilerplate that adds
+    nothing. Specific tells: 30-line block comments explaining a 3-line
+    constant; comments that say WHY NOT instead of restructuring the code so
+    the why-not doesn't exist; `// Note:` prefixes; comments that restate the
+    variable name in prose. (Overly defensive code is covered separately
+    above.)
+13. **Performance/Security** — Only when it's a real and present concern, not
     premature optimization
 
 ---

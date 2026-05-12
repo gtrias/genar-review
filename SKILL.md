@@ -95,22 +95,29 @@ Check every review for these, in priority order:
    input, external APIs, deserialization). If a value can be invalid here,
    the fix is usually a better type, constructor, or factory that makes
    invalid states unrepresentable — not another `if`.
-10. **Future pain** — Will this force manual steps every time something is added?
+10. **Magic strings/numbers** — Flag string or numeric literals carrying meaning
+    that's repeated, compared, or branched on across the codebase: status
+    values, role names, event types, config keys, limits, timeouts, sentinel
+    IDs. Replace with a named constant, enum, or typed value so the meaning
+    lives in one place and the type system can catch typos. One-off literals
+    used at a single site are fine — the smell is meaning without a name, or
+    the same literal appearing in two places that must agree.
+11. **Future pain** — Will this force manual steps every time something is added?
    (e.g., enums requiring migrations, lists requiring remembering to update)
    - **Postgres enums** — flag every time. Adding a value forces a DB migration,
      renaming/removing is even worse. Suggest `text` + a `CHECK` constraint, or
      a lookup table. Application-level enums (Rails, Ecto, etc.) backed by
      `text`/`varchar` are fine. The cost is on the Postgres `CREATE TYPE` kind.
-11. **Refactoring opportunities** — Existing code that could be improved while
+12. **Refactoring opportunities** — Existing code that could be improved while
     we're here
-12. **AI slop** — Code that looks suspiciously generated: over-commented,
+13. **AI slop** — Code that looks suspiciously generated: over-commented,
     unnecessary abstractions, generic variable names, boilerplate that adds
     nothing. Specific tells: 30-line block comments explaining a 3-line
     constant; comments that say WHY NOT instead of restructuring the code so
     the why-not doesn't exist; `// Note:` prefixes; comments that restate the
     variable name in prose. (Overly defensive code is covered separately
     above.)
-13. **Performance/Security** — Only when it's a real and present concern, not
+14. **Performance/Security** — Only when it's a real and present concern, not
     premature optimization
 
 ---

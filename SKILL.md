@@ -110,14 +110,23 @@ Check every review for these, in priority order:
      `text`/`varchar` are fine. The cost is on the Postgres `CREATE TYPE` kind.
 12. **Refactoring opportunities** — Existing code that could be improved while
     we're here
-13. **AI slop** — Code that looks suspiciously generated: over-commented,
+13. **Design system / Storybook** — When applicable. If the project has a design
+    system, component library, or Storybook, flag ad-hoc UI components, one-off
+    buttons, custom modals, inline styles, or duplicated layout primitives that
+    could either reuse an existing design system component or be promoted into
+    the design system. The smell is a new component built from scratch when a
+    matching one already exists, or the third ad-hoc variant of something that
+    clearly belongs in the system. Check `components/ui`, `packages/ui`,
+    `*.stories.*` files, or wherever the system lives before commenting. If
+    there's no design system, skip this lens.
+14. **AI slop** — Code that looks suspiciously generated: over-commented,
     unnecessary abstractions, generic variable names, boilerplate that adds
     nothing. Specific tells: 30-line block comments explaining a 3-line
     constant; comments that say WHY NOT instead of restructuring the code so
     the why-not doesn't exist; `// Note:` prefixes; comments that restate the
     variable name in prose. (Overly defensive code is covered separately
     above.)
-14. **Performance/Security** — Only when it's a real and present concern, not
+15. **Performance/Security** — Only when it's a real and present concern, not
     premature optimization
 
 ---

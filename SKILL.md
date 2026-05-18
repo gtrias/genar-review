@@ -88,6 +88,23 @@ Check every review for these, in priority order:
 7. **Tests** — Business logic changed or added without tests? Flag missing
    test coverage.
 8. **Over-engineering** — Premature abstractions, YAGNI violations?
+8a. **Extension & Composition (Open/Closed + DX)** — Can you add a new variant
+    (payment type, session kind, feature) without touching unrelated files?
+    If adding X means editing 3+ existing files, the design resists extension.
+    - **Switch/if-else chains on types** — these grow forever. Interface +
+      registration is cheaper now and pays off later.
+    - **Business logic in UI components** — components should compose services,
+      not contain decisions. Extract behind a typed interface.
+    - **Cognitive size** — files over ~400 lines doing 3+ things; naming that
+      doesn't match behavior; needing to read 3 unrelated files to understand
+      one feature → the mental model is broken. Each feature must fit in
+      any programmer's head.
+    - **DX / Findability** — extension point should be obvious from file
+      structure. "Where does new-X go?" should not require asking anyone.
+      Implement an interface, register it, done.
+    - **Indirection limit** — 3+ hops (`A → B → C → D`) to do something
+      simple is too deep. The line between extensible and over-engineered
+      is measured in calls, not patterns.
 9. **Defensive code** — Flag runtime guards that the type system or OOP design
    should make unnecessary: redundant null/undefined checks, re-validating
    well-typed inputs inside callers, "just in case" try/catches, parameter

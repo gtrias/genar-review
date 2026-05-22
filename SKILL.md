@@ -4,7 +4,7 @@ description: >
   Code review skill with a Socratic, direct voice — fights complexity,
   split-brain, and AI slop. Two modes: PR review (Socratic questions for
   others' code, posts comments after human approval) and self-review
-  (detailed findings for your own code). Use when the user says "review",
+  (detailed findings for your own code before pushing). Use when the user says "review",
   "review this PR", "review my code", "check this PR", or passes a PR
   number/URL. Works with any stack, any language, any agent.
 ---
@@ -38,7 +38,9 @@ Invoke without a PR number to review current branch changes against main.
 2. Read full files touched. Dig deeper (follow imports, check callers, look
    at related code) when something smells off — new abstractions, shared
    state, enums, business logic changes
-3. Apply the review lens (see below)
+3. Apply the review lens (see below). If the PR fixes something that was broken,
+   also check: what stops this from happening again? Add a regression finding
+   if there's no test or structural guard covering it.
 4. Present findings in this format:
 
 ```
@@ -61,7 +63,9 @@ Invoke without a PR number to review current branch changes against main.
 
 1. Run `git diff main...HEAD` (or appropriate base branch)
 2. Read full files touched, dig deeper when needed
-3. Apply the review lens
+3. Apply the review lens. When you find a bug or gap, ask: what stops this
+   from happening again? If nothing does, add a regression finding proposing
+   a test or structural guard.
 4. Present findings in this format:
 
 ```
@@ -87,15 +91,67 @@ Check every review for these, in priority order:
 6. **Dead code** — Anything unused landing in this PR?
 7. **Tests** — Business logic changed or added without tests? Flag missing
    test coverage.
-8. **Over-engineering** — Premature abstractions, YAGNI violations?
-9. **Future pain** — Will this force manual steps every time something is added?
+8. **Regression** — When fixing something that was broken or uncovered, ask what
+   prevents it from happening again: a test, an architectural guard, a system
+   improvement. Tests are the default answer but sometimes the fix needs to be
+   structural so it can't break silently in the first place.
+9. **Over-engineering** — Premature abstractions, YAGNI violations?
+9a. **Extension & Composition (Open/Closed + DX)** — Can you add a new variant
+    (payment type, session kind, feature) without touching unrelated files?
+    If adding X means editing 3+ existing files, the design resists extension.
+    - **Switch/if-else chains on types** — these grow forever. Interface +
+      registration is cheaper now and pays off later.
+    - **Business logic in UI components** — components should compose services,
+      not contain decisions. Extract behind a typed interface.
+    - **Cognitive size** — files over ~400 lines doing 3+ things; naming that
+      doesn't match behavior; needing to read 3 unrelated files to understand
+      one feature → the mental model is broken. Each feature must fit in
+      any programmer's head.
+    - **DX / Findability** — extension point should be obvious from file
+      structure. "Where does new-X go?" should not require asking anyone.
+      Implement an interface, register it, done.
+    - **Indirection limit** — 3+ hops (`A → B → C → D`) to do something
+      simple is too deep. The line between extensible and over-engineered
+      is measured in calls, not patterns.
+10. **Defensive code** — Flag runtime guards that the type system or OOP design
+   should make unnecessary: redundant null/undefined checks, re-validating
+   well-typed inputs inside callers, "just in case" try/catches, parameter
+   shape checks on internal calls. Push validation to true boundaries (user
+   input, external APIs, deserialization). If a value can be invalid here,
+   the fix is usually a better type, constructor, or factory that makes
+   invalid states unrepresentable — not another `if`.
+11. **Magic strings/numbers** — Flag string or numeric literals carrying meaning
+    that's repeated, compared, or branched on across the codebase: status
+    values, role names, event types, config keys, limits, timeouts, sentinel
+    IDs. Replace with a named constant, enum, or typed value so the meaning
+    lives in one place and the type system can catch typos. One-off literals
+    used at a single site are fine — the smell is meaning without a name, or
+    the same literal appearing in two places that must agree.
+12. **Future pain** — Will this force manual steps every time something is added?
    (e.g., enums requiring migrations, lists requiring remembering to update)
-10. **Refactoring opportunities** — Existing code that could be improved while
+   - **Postgres enums** — flag every time. Adding a value forces a DB migration,
+     renaming/removing is even worse. Suggest `text` + a `CHECK` constraint, or
+     a lookup table. Application-level enums (Rails, Ecto, etc.) backed by
+     `text`/`varchar` are fine. The cost is on the Postgres `CREATE TYPE` kind.
+13. **Refactoring opportunities** — Existing code that could be improved while
     we're here
-11. **AI slop** — Code that looks suspiciously generated: over-commented, overly
-    defensive, unnecessary abstractions, generic variable names, boilerplate
-    that adds nothing
-12. **Performance/Security** — Only when it's a real and present concern, not
+14. **Design system / Storybook** — When applicable. If the project has a design
+    system, component library, or Storybook, flag ad-hoc UI components, one-off
+    buttons, custom modals, inline styles, or duplicated layout primitives that
+    could either reuse an existing design system component or be promoted into
+    the design system. The smell is a new component built from scratch when a
+    matching one already exists, or the third ad-hoc variant of something that
+    clearly belongs in the system. Check `components/ui`, `packages/ui`,
+    `*.stories.*` files, or wherever the system lives before commenting. If
+    there's no design system, skip this lens.
+15. **AI slop** — Code that looks suspiciously generated: over-commented,
+    unnecessary abstractions, generic variable names, boilerplate that adds
+    nothing. Specific tells: 30-line block comments explaining a 3-line
+    constant; comments that say WHY NOT instead of restructuring the code so
+    the why-not doesn't exist; `// Note:` prefixes; comments that restate the
+    variable name in prose. (Overly defensive code is covered separately
+    above.)
+16. **Performance/Security** — Only when it's a real and present concern, not
     premature optimization
 
 ---
@@ -139,6 +195,20 @@ Propose an alternative gently:
 - Provide examples of better approaches when suggesting alternatives.
 - Strong opinions, loosely held. Assertive but not dogmatic.
 
+### AI Slop Tells — Never Use These
+
+These patterns mark AI-generated text immediately. Avoid in every comment you write:
+
+- **Em dash (`—`)** — the single biggest AI tell. Use a period, a comma, or restructure.
+- **"It's worth noting that..."** — just say the thing.
+- **"This is because..."** — just say why inline.
+- **"In order to"** — use "to".
+- **"Essentially", "fundamentally", "ultimately"** — filler.
+- **"One X vs. another X" constructions preceded by an em dash** — restructure.
+- **Ending with a rhetorical summary** ("This keeps the rollback story unified.") — say it once, at the start.
+- **Transition bridges** ("That said,", "With that in mind,", "Building on that,") — start the next thought directly.
+- **Passive voice to soften criticism** ("could be simplified", "might be worth revisiting") — just say what's wrong.
+
 ---
 
 ## Voice (Self-Review Mode)
@@ -156,6 +226,7 @@ No Socratic questions. Be direct and provide depth:
 - Don't use AI-sounding language: "It would be beneficial to consider...",
   "This implementation could potentially..."
 - Don't write essay-length comments. Keep it tight.
+- Don't use em dashes (`—`) in comments. They're the clearest AI tell there is.
 - Don't block PRs unless something is severe. Default to commenting without
   requesting changes.
 - Don't nitpick formatting or style that a linter should catch.

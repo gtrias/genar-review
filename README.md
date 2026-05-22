@@ -11,7 +11,7 @@ Works with any stack, any language, any agent.
 **PR Review:**
 1. Fetches the PR diff and reads full files touched
 2. Digs deeper when something smells off (follows imports, checks callers)
-3. Applies the review lens (complexity, SRP, split-brain, dead code, missing tests, AI slop, etc.)
+3. Applies the review lens (complexity, SRP, split-brain, dead code, missing tests, regression guards, extension, defensive code, magic strings, AI slop, etc.)
 4. Presents findings with the exact comment text + private rationale
 5. You approve, edit, or discard — then it posts via `gh`
 
@@ -31,11 +31,16 @@ Works with any stack, any language, any agent.
 | 5 | Root cause — solving the real problem? |
 | 6 | Dead code — unused stuff landing? |
 | 7 | Tests — business logic without coverage? |
-| 8 | Over-engineering — YAGNI? |
-| 9 | Future pain — manual steps on every change? |
-| 10 | Refactoring opportunities |
-| 11 | AI slop — suspiciously generated code |
-| 12 | Performance/Security — only when real |
+| 8 | Regression — fix without guard against recurrence? |
+| 9 | Over-engineering — YAGNI? |
+| 9a | Extension & Composition — can you add a variant without touching unrelated files? |
+| 10 | Defensive code — runtime guards the type system should prevent? |
+| 11 | Magic strings/numbers — meaning without a name? |
+| 12 | Future pain — manual steps on every change? |
+| 13 | Refactoring opportunities |
+| 14 | Design system / Storybook — ad-hoc UI when system exists? |
+| 15 | AI slop — suspiciously generated code |
+| 16 | Performance/Security — only when real |
 
 ## Voice
 
@@ -68,7 +73,6 @@ npx skills add gtrias/genar-review
 ## Usage
 
 Tell your agent:
-
 - "Review PR #123"
 - "Review https://github.com/org/repo/pull/123"
 - "Review my code" (self-review mode)

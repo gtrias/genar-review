@@ -96,23 +96,53 @@ Check every review for these, in priority order:
    improvement. Tests are the default answer but sometimes the fix needs to be
    structural so it can't break silently in the first place.
 9. **Over-engineering** — Premature abstractions, YAGNI violations?
-9a. **Extension & Composition (Open/Closed + DX)** — Can you add a new variant
+9a. **Extension & Composition (Open/Closed)** — Can you add a new variant
     (payment type, session kind, feature) without touching unrelated files?
     If adding X means editing 3+ existing files, the design resists extension.
     - **Switch/if-else chains on types** — these grow forever. Interface +
       registration is cheaper now and pays off later.
     - **Business logic in UI components** — components should compose services,
       not contain decisions. Extract behind a typed interface.
-    - **Cognitive size** — files over ~400 lines doing 3+ things; naming that
-      doesn't match behavior; needing to read 3 unrelated files to understand
-      one feature → the mental model is broken. Each feature must fit in
-      any programmer's head.
-    - **DX / Findability** — extension point should be obvious from file
-      structure. "Where does new-X go?" should not require asking anyone.
-      Implement an interface, register it, done.
     - **Indirection limit** — 3+ hops (`A → B → C → D`) to do something
       simple is too deep. The line between extensible and over-engineered
       is measured in calls, not patterns.
+9b. **Developer Experience (DX)** — Treat every API, function, module, CLI flag,
+    config key, and error message as a product with consumers (other devs, your
+    future self, AI agents). Good DX compounds: faster iteration, fewer bugs,
+    shorter time-to-market, and better AI-agent correctness. Bad DX is a tax
+    paid on every change. Tiered:
+
+    **Universal (every PR):**
+    - **Naming carries meaning** — function/variable/file names should predict
+      behavior. If you have to read the body to know what it does, the name is
+      wrong. `processData`, `handleStuff`, `utils.ts` are smells.
+    - **Cognitive size** — files over ~400 lines doing 3+ things, or needing to
+      read 3 unrelated files to understand one feature, means the mental model
+      is broken. Each feature must fit in any programmer's head.
+    - **Obvious from the call site** — a caller should understand intent without
+      jumping to the definition. Positional booleans (`doThing(true, false)`),
+      untyped option bags, and overloaded return types break this.
+    - **Errors that teach** — error messages should say what happened, why, and
+      what to do. "Invalid input" is a bug. "Expected ISO 8601 date, got
+      '2026/05/24'; use YYYY-MM-DD" is DX.
+    - **One obvious way** — two helpers that do almost the same thing force
+      every consumer (and every agent) to choose. Pick one, delete the other.
+    - **Findability** — "Where does new-X go?" should be answerable from file
+      structure, types, or autocomplete without asking anyone.
+
+    **Public surface (APIs, SDKs, CLIs, libraries, cross-team contracts):**
+    - **Stripe/Cloudflare bar** — would a new user succeed in 5 minutes without
+      reading source? If not, the contract is leaking implementation.
+    - **Defaults that work** — the zero-config path should do the right thing
+      for the 80% case. Required options are a tax; justify each one.
+    - **Progressive disclosure** — simple things simple, complex things possible.
+      Don't force every caller to learn the full surface to do the basic thing.
+    - **Stable contracts** — flag breaking changes to public types, function
+      signatures, CLI flags, env vars, or wire formats without a migration path
+      or version bump.
+    - **Documentation at the boundary** — public functions/types without
+      docstrings, examples missing for non-obvious APIs, README out of sync
+      with behavior.
 10. **Defensive code** — Flag runtime guards that the type system or OOP design
    should make unnecessary: redundant null/undefined checks, re-validating
    well-typed inputs inside callers, "just in case" try/catches, parameter

@@ -74,6 +74,9 @@ Invoke without a PR number to review current branch changes against main.
    Suggestion: concrete actionable fix
 ```
 
+5. Then run the **Implementation Friction Pass** (see below) and present its
+   findings as a separate section.
+
 No posting step. No Socratic questions. Be direct and detailed.
 
 ---
@@ -294,3 +297,70 @@ This skill requires an agent that can:
 - Read files and diffs
 - Execute bash commands (git, gh CLI)
 - Present findings and wait for user input before acting
+
+---
+
+## Implementation Friction Pass (Self-Review Only)
+
+After the normal review, analyze the *process* of building what was just built.
+The question is not "is the code good" but "was this as short and easy to
+implement as it could have been, and what made it harder than necessary?"
+
+This is especially valuable when reviewing work done by your own agents: every
+friction point is a chance to fix the tooling, types, scaffolding, or
+conventions so the next change of this shape is cheaper.
+
+### Signals to look for
+
+Walk the diff and ask, for each non-trivial change:
+
+- **Number of files touched for one logical change** — adding one feature
+  required edits in N unrelated places. Each extra file is friction; name it
+  and propose the seam that would collapse them (registry, interface, codegen,
+  config-driven dispatch).
+- **Repeated shapes across the diff** — the same boilerplate block (try/catch
+  wrapper, validation preamble, logging prelude, type narrowing dance,
+  fixture setup) appears 3+ times. Extract or generate it.
+- **Manual steps the type system / build should enforce** — "remember to also
+  update X", "don't forget to register Y", "rerun codegen", "bump the enum in
+  two places". Every "remember to" is a future bug; propose a structural fix
+  (exhaustive switch, single source list, generated file, CI check).
+- **Discoverability gaps** — was it obvious where new-X goes? If the author
+  (or the agent) had to grep, ask, or guess, the file/module layout failed.
+  Propose the convention or index that would have answered it.
+- **Naming that forced re-reading** — symbols whose meaning only became clear
+  after opening the body. Rename now while the context is fresh.
+- **Tests that were painful to write** — heavy mocking, large fixtures, setup
+  unrelated to the assertion, copy-pasted test scaffolding. The production
+  code shape is usually the cause; propose the seam (pure core, discrete
+  injection point, test helper) that would shrink the next test.
+- **Tooling gaps** — missing script, missing generator, missing skill, missing
+  snippet, missing lint rule, missing local command. If the agent had to
+  reinvent a workflow, capture it.
+- **Docs/skills that were missing or wrong** — if the agent had to infer a
+  convention that should have been written down, flag it and suggest where
+  it belongs (CONTEXT.md, ADR, skill, README, type comment).
+- **AI-agent specific friction** — patterns that are cheap for humans but
+  expensive for agents: implicit context, magic globals, conventions not
+  expressible in types, "you just have to know" rules. Agents pay this tax
+  every run; fix it once.
+
+### Output format
+
+Present as a separate section after the code findings:
+
+```
+## Implementation Friction
+
+1. <friction point, one line>
+   Evidence: <files / pattern in the diff that shows it>
+   Cost: <what it made harder, for humans and agents>
+   Fix: <concrete change that removes the friction next time:
+         a refactor, a new helper, a type, a script, a skill update,
+         a doc, a lint rule>
+
+2. ...
+```
+
+If the implementation was genuinely frictionless, say so in one line and stop.
+Don't manufacture friction to fill the section.

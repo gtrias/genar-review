@@ -43,15 +43,27 @@ Invoke without a PR number to review current branch changes against main.
    if there's no test or structural guard covering it.
 4. Present findings in this format:
 
-```
-1. file:line
-   Comment: "the comment as it would be posted"
-   Why: private rationale connecting to a principle
+Each finding is its own 2-column card. One card per issue, stacked vertically.
 
-2. file:line
-   Comment: "..."
-   Why: ...
 ```
+### 1. `file:line` — short title
+
+| | |
+|---|---|
+| **Comment** | "the comment as it would be posted" |
+| **Why**     | private rationale connecting to a principle |
+
+### 2. `file:line` — short title
+
+| | |
+|---|---|
+| **Comment** | "..." |
+| **Why**     | ... |
+```
+
+Cells may wrap across lines (markdown tables allow it as long as no blank
+line breaks the row). Use backticks for code, real line breaks via `<br>` only
+when essential. Keep the title in the heading short so the index is scannable.
 
 5. Wait for user confirmation. They may say "post all", "drop 3", "reword 2
    to X", etc.
@@ -68,11 +80,26 @@ Invoke without a PR number to review current branch changes against main.
    a test or structural guard.
 4. Present findings in this format:
 
+Each finding is its own 2-column card. One card per issue, stacked vertically.
+
 ```
-1. file:line
-   Issue: direct explanation of the problem with depth
-   Suggestion: concrete actionable fix
+### 1. `file:line` — short title
+
+| | |
+|---|---|
+| **Issue**      | direct explanation of the problem with depth |
+| **Suggestion** | concrete actionable fix (code sample ok) |
+
+### 2. `file:line` — short title
+
+| | |
+|---|---|
+| **Issue**      | ... |
+| **Suggestion** | ... |
 ```
+
+Cells may wrap; use backticks for code and `<br>` for hard breaks only when
+essential. Multi-line code blocks belong under the heading, outside the table.
 
 5. Then run the **Implementation Friction Pass** (see below) and present its
    findings as a separate section.
@@ -349,17 +376,26 @@ Walk the diff and ask, for each non-trivial change:
 
 Present as a separate section after the code findings:
 
-```
 ## Implementation Friction
 
-1. <friction point, one line>
-   Evidence: <files / pattern in the diff that shows it>
-   Cost: <what it made harder, for humans and agents>
-   Fix: <concrete change that removes the friction next time:
-         a refactor, a new helper, a type, a script, a skill update,
-         a doc, a lint rule>
+Each friction point is its own 2-column card.
 
-2. ...
+```
+### 1. short friction title
+
+| | |
+|---|---|
+| **Evidence** | files / pattern in the diff that shows it |
+| **Cost**     | what it made harder (humans + agents) |
+| **Fix**      | concrete structural change that removes it next time |
+
+### 2. short friction title
+
+| | |
+|---|---|
+| **Evidence** | ... |
+| **Cost**     | ... |
+| **Fix**      | ... |
 ```
 
 If the implementation was genuinely frictionless, say so in one line and stop.

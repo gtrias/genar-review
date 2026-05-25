@@ -390,3 +390,37 @@ Each friction point is its own card.
 
 If the implementation was genuinely frictionless, say so in one line and stop.
 Don't manufacture friction to fill the section.
+---
+
+## Suggested Action Sets
+
+After presenting findings (and, in self-review, the Implementation Friction
+Pass), always close the review with three tiered sets of issues to tackle.
+Reference findings by their card number. For each set, name the issues
+included and explain concretely how addressing each one improves the code
+(what gets simpler, safer, faster, or cheaper to change).
+
+Format:
+
+```
+## Suggested Action Sets
+
+### Minimal — highest ROI, lowest effort
+- **#N short title** — how fixing it improves the code
+- **#M short title** — how fixing it improves the code
+
+### Solid — covers the real structural issues
+- **#N ...** — impact
+- **#M ...** — impact
+- **#K ...** — impact
+
+### Ambitious — tackle all or almost all
+- All of the above, plus #X, #Y, #Z. Explain the compounding effect:
+  what becomes possible once the whole set lands (e.g., the module stops
+  leaking, extension becomes a one-file change, the test suite shrinks).
+```
+
+Pick which findings go where based on effort vs. payoff, not severity alone.
+A small naming fix that removes a recurring source of confusion can belong
+in Minimal; a large refactor that only pays off in six months belongs in
+Ambitious. Close with a one-line recommendation: which set you'd pick and why.

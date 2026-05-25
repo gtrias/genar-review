@@ -43,27 +43,24 @@ Invoke without a PR number to review current branch changes against main.
    if there's no test or structural guard covering it.
 4. Present findings in this format:
 
-Each finding is its own 2-column card. One card per issue, stacked vertically.
+Each finding is its own card: a heading with the location, then bold-labeled
+fields underneath. One blank line between cards.
 
 ```
 ### 1. `file:line` — short title
 
-| | |
-|---|---|
-| **Comment** | "the comment as it would be posted" |
-| **Why**     | private rationale connecting to a principle |
+- **Comment:** "the comment as it would be posted"
+- **Why:** private rationale connecting to a principle
 
 ### 2. `file:line` — short title
 
-| | |
-|---|---|
-| **Comment** | "..." |
-| **Why**     | ... |
+- **Comment:** "..."
+- **Why:** ...
 ```
 
-Cells may wrap across lines (markdown tables allow it as long as no blank
-line breaks the row). Use backticks for code, real line breaks via `<br>` only
-when essential. Keep the title in the heading short so the index is scannable.
+Keep the heading short so the index of findings is scannable on its own.
+Field values may wrap across lines; multi-line code samples go in a fenced
+block below the bullets, still inside the same card.
 
 5. Wait for user confirmation. They may say "post all", "drop 3", "reword 2
    to X", etc.
@@ -80,26 +77,23 @@ when essential. Keep the title in the heading short so the index is scannable.
    a test or structural guard.
 4. Present findings in this format:
 
-Each finding is its own 2-column card. One card per issue, stacked vertically.
+Each finding is its own card: a heading with the location, then bold-labeled
+fields underneath. One blank line between cards.
 
 ```
 ### 1. `file:line` — short title
 
-| | |
-|---|---|
-| **Issue**      | direct explanation of the problem with depth |
-| **Suggestion** | concrete actionable fix (code sample ok) |
+- **Issue:** direct explanation of the problem with depth
+- **Suggestion:** concrete actionable fix
 
 ### 2. `file:line` — short title
 
-| | |
-|---|---|
-| **Issue**      | ... |
-| **Suggestion** | ... |
+- **Issue:** ...
+- **Suggestion:** ...
 ```
 
-Cells may wrap; use backticks for code and `<br>` for hard breaks only when
-essential. Multi-line code blocks belong under the heading, outside the table.
+Field values may wrap across lines. Multi-line code samples go in a fenced
+block below the bullets, still inside the same card.
 
 5. Then run the **Implementation Friction Pass** (see below) and present its
    findings as a separate section.
@@ -378,24 +372,20 @@ Present as a separate section after the code findings:
 
 ## Implementation Friction
 
-Each friction point is its own 2-column card.
+Each friction point is its own card.
 
 ```
 ### 1. short friction title
 
-| | |
-|---|---|
-| **Evidence** | files / pattern in the diff that shows it |
-| **Cost**     | what it made harder (humans + agents) |
-| **Fix**      | concrete structural change that removes it next time |
+- **Evidence:** files / pattern in the diff that shows it
+- **Cost:** what it made harder (humans + agents)
+- **Fix:** concrete structural change that removes it next time
 
 ### 2. short friction title
 
-| | |
-|---|---|
-| **Evidence** | ... |
-| **Cost**     | ... |
-| **Fix**      | ... |
+- **Evidence:** ...
+- **Cost:** ...
+- **Fix:** ...
 ```
 
 If the implementation was genuinely frictionless, say so in one line and stop.

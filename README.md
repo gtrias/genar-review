@@ -22,13 +22,14 @@ Works with any stack, any language, any agent.
 **Self-review**
 1. Detects the base branch and diffs committed, staged, and unstaged changes.
 2. Same review lens, output is direct and detailed (no Socratic questions).
-3. Adds an Implementation Friction Pass: what made this harder than it needed to be.
+3. Adds a Friction Pass: what made this harder than it needed to be.
 4. No posting. Feedback for you to act on.
 
 **Artifact review**
 1. Reads the artifact (plan, spec, RFC, ADR, PRD, design doc, README, prompt, skill, single source file, pasted text) and any referenced material.
 2. Applies the lens filtered to what is relevant (skips code-only items like defensive code or design system).
-3. No posting. Direct findings.
+3. Adds the same Friction Pass for plans, specs, and docs.
+4. No posting. Direct findings.
 
 The skill picks the mode from your request. If it cannot tell, it asks once.
 

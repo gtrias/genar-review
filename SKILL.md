@@ -82,7 +82,7 @@ wait for confirmation, then post. The user may:
 3. Read full files touched. Dig deeper when needed.
 4. Apply the review lens.
 5. Present findings in the card format.
-6. Run the **Implementation Friction Pass** and present it as a separate section.
+6. Run the **Friction Pass** and present it as a separate section.
 7. Close with **Suggested Action Sets**.
 
 No posting step. No Socratic questions. Be direct and detailed.
@@ -103,7 +103,8 @@ skill files, configs, single source files, pasted text.
    source code. Lens tags are the single source of truth for what applies.
 4. Present findings in the card format. Use `section`, `heading`, or a short
    quoted phrase as the locator when there are no line numbers.
-5. Close with **Suggested Action Sets**.
+5. Run the **Friction Pass** and present it as a separate section.
+6. Close with **Suggested Action Sets**.
 
 No posting step. Be direct and detailed.
 
@@ -140,10 +141,11 @@ Keep headings short so the index of findings is scannable on its own.
 
 ## Review Lens
 
-Check every review for these, in priority order. The lens uses stable slugs;
-add, reorder, or skip items freely. Slugs marked *(code)* apply only to code
-reviews; slugs marked *(content)* apply to artifact reviews; the rest apply
-to all modes.
+Check every review for these, in the order listed (rough priority, but
+slugs are the stable identifiers). Add, reorder, or skip items freely.
+Slugs marked *(code)* apply only to code reviews; *(content)* apply only
+to artifact reviews; the rest apply to all modes. Numbers are not stable;
+reference items by slug.
 
 1. **atomicity**: is the work doing more than one thing? Flag it immediately.
 2. **description / framing**: does the artifact (PR, doc, plan) explain first
@@ -152,8 +154,8 @@ to all modes.
 4. **single-source-of-truth**: any split-brain risk? Duplicated state, logic,
    or claims that must agree across places?
 5. **root-cause**: is this solving the actual problem or papering over symptoms?
-6. **dead-content**: anything unused, unreferenced, or obsolete landing? *(code:
-   unused code; content: orphan sections, dead links, stale claims.)*
+6. **dead-content**: anything unused, unreferenced, or obsolete landing?
+   Examples: unused code, orphan sections, dead links, stale claims.
 7. **tests** *(code)*: business logic changed or added without tests? Flag
    missing coverage. On fixes, require a test or structural guard against
    recurrence; sometimes the right answer is structural so the bug cannot
@@ -240,6 +242,10 @@ to all modes.
 17. **performance-security** *(code)*: only when it is a real and present
     concern, not premature optimization.
 
+Numbers above are presentational only; if you add a new lens between two
+existing items, do not renumber the rest. Reference findings by slug
+(`tests`, `dx`, `dead-content`) when discussing the lens itself.
+
 ---
 
 ## Voice
@@ -315,8 +321,10 @@ read in full:
 
 ## Posting PR Comments
 
-Two backends. Use whichever the agent has. The skill itself prefers MCP when
-available; fall back to `gh` CLI otherwise.
+Two backends. Use MCP if the GitHub MCP tools are listed in the agent's
+tool inventory (e.g., `pull_request_review_write`,
+`add_comment_to_pending_review`); otherwise use the `gh` CLI. Do not mix
+backends in the same review.
 
 ### `gh` CLI recipe
 
@@ -367,20 +375,21 @@ Notes:
 
 ---
 
-## Implementation Friction Pass (Self-Review Only)
+## Friction Pass (self-review and artifact review)
 
-After the normal review, analyze the process of building what was just
-built. The question is not "is the code good" but "was this as short and
-easy to implement as it could have been, and what made it harder than
-necessary?"
+After the normal review, analyze the process of producing what was just
+produced (code or artifact). The question is not "is this good" but "was
+this as short and easy to make as it could have been, and what made it
+harder than necessary?"
 
 Especially valuable for work done by your own agents: every friction point
-is a chance to fix the tooling, types, scaffolding, or conventions so the
-next change of this shape is cheaper.
+is a chance to fix the tooling, types, scaffolding, templates, or
+conventions so the next change of this shape is cheaper.
 
 ### Signals to look for
 
-Walk the diff and ask, for each non-trivial change:
+Walk the diff (for code) or the artifact and its references (for plans,
+specs, docs) and ask, for each non-trivial section:
 
 - **Number of files touched for one logical change**: adding one feature
   required edits in N unrelated places. Each extra file is friction; name
@@ -415,10 +424,10 @@ Walk the diff and ask, for each non-trivial change:
 
 ### Output format
 
-Present as a separate section after the code findings.
+Present as a separate section after the main findings.
 
 ```
-## Implementation Friction
+## Friction
 
 ### 1. short friction title
 
@@ -434,8 +443,8 @@ stop. Do not manufacture friction to fill the section.
 
 ## Suggested Action Sets
 
-After presenting findings (and, in self-review, the Implementation Friction
-Pass), close the review with three tiered sets of issues to tackle.
+After presenting findings (and, in self-review or artifact review, the
+Friction Pass), close the review with three tiered sets of issues to tackle.
 Reference findings by their card number. For each set, name the issues
 included and explain concretely how addressing each one improves the work
 (what gets simpler, safer, faster, or cheaper to change).

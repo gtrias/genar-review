@@ -326,43 +326,116 @@ tool inventory (e.g., `pull_request_review_write`,
 `add_comment_to_pending_review`); otherwise use the `gh` CLI. Do not mix
 backends in the same review.
 
-### `gh` CLI recipe
+Pick the approach that matches the review shape:
 
-Create a pending review, append line-anchored comments, then submit.
+|Approach|Use when|
+|---|---|
+|**Flat body** (simplest)|All comments are PR-level (no line anchors) or `line`/`position` anchoring fails|
+|**Single-POST with `comments` array** (recommended for line-anchored)|Multiple findings, some or all file-specific|
+|**Two-phase: create + append** (legacy)|Avoid. Only if the single-POST approach is impractical|
+
+### `-F` vs `-f` in `gh api` calls
+
+`gh api -F` sends the value as an integer. `gh api -f` sends it as a string.
+Use `-F` for `line`, `start_line`, `position`. Use `-f` for everything else.
+
+### Approach 1: Flat body (no line anchors)
+
+When all findings are PR-level or the API refuses line-anchored comments,
+post everything in the review body. Include `file:line` references as text
+so readers can find the relevant code.
 
 ```bash
 OWNER=org REPO=repo PR=123
 
-# 1. Resolve the head commit the comments anchor to.
+gh pr review "$PR" --repo "$OWNER/$REPO" --approve --body "…"
+# event is one of --approve | --comment | --request-changes
+```
+
+Note: `--comment` (the flag for a single inline comment) only accepts one
+value. For multiple file-specific comments, use Approach 2 or put them in
+the body.
+
+### Approach 2: Single-POST with `comments` array (line-anchored)
+
+Creates the review and all inline comments in one atomic call. No orphaned
+pending reviews. Uses `position` (1-indexed within the diff patch) instead
+of `line` because `line` is silently rejected on context lines and
+unreliable across GitHub instances.
+
+**Step A: compute `position` for each comment.**
+
+For each finding, fetch the file's patch and locate the target line:
+
+```bash
+OWNER=org REPO=repo PR=123
 COMMIT=$(gh pr view "$PR" --repo "$OWNER/$REPO" --json headRefOid -q .headRefOid)
 
-# 2. Create a pending review. Capture its id.
-REVIEW_ID=$(gh api -X POST \
-  "/repos/$OWNER/$REPO/pulls/$PR/reviews" \
+# Get the patch for one file and find the position of a specific + line.
+# position = 1-indexed line number within the patch text (including @@ headers).
+# Only + lines (RIGHT side) and context lines are valid anchor points.
+gh api "/repos/$OWNER/$REPO/pulls/$PR/files" \
+  --jq '.[] | select(.filename == "src/foo.ts") | .patch' \
+  | awk -v target='+  locale = '\''en'\'',' '
+    { line_num++ }
+    $0 ~ target { print line_num; exit }
+  '
+```
+
+If a line is context (no `+`/`-` prefix), anchor to the nearest `+` line
+in the same hunk and mention the intended line in the comment body.
+
+**Step B: post the review with all comments.**
+
+```bash
+OWNER=org REPO=repo PR=123
+COMMIT=$(gh pr view "$PR" --repo "$OWNER/$REPO" --json headRefOid -q .headRefOid)
+
+# Build the comments JSON array. Use -f for each field:
+# comments[N][path], comments[N][position], comments[N][body]
+gh api -X POST "/repos/$OWNER/$REPO/pulls/$PR/reviews" \
   -f commit_id="$COMMIT" \
-  -q .id)
+  -f event=COMMENT \
+  -f body="PR-level feedback (optional)" \
+  -f comments[0][path]="src/foo.ts" \
+  -F comments[0][position]=15 \
+  -f comments[0][body]="First inline comment" \
+  -f comments[1][path]="src/bar.ts" \
+  -F comments[1][position]=3 \
+  -f comments[1][body]="Second inline comment"
+```
 
-# 3. Append each comment. Repeat per finding.
-gh api -X POST \
-  "/repos/$OWNER/$REPO/pulls/$PR/reviews/$REVIEW_ID/comments" \
-  -f path="path/to/file.ts" \
-  -F line=42 \
-  -f side=RIGHT \
-  -f body="the comment text"
+**Step C (optional): approve or request changes.**
 
-# 4. Submit. event is one of COMMENT | APPROVE | REQUEST_CHANGES.
+If you used `event=COMMENT` above and need to change the verdict:
+
+```bash
+REVIEW_ID=<id from step B response>
 gh api -X POST \
   "/repos/$OWNER/$REPO/pulls/$PR/reviews/$REVIEW_ID/events" \
+  -f event=APPROVE
+```
+
+Or include `-f event=APPROVE` directly in Step B to approve in one call.
+
+### Recovery: stuck pending review
+
+If comment posting fails mid-way, a pending review is orphaned and blocks
+future `gh pr review` calls ("User can only have one pending review per
+pull request"). Fix:
+
+```bash
+# Find the stuck pending review
+gh api "/repos/$OWNER/$REPO/pulls/$PR/reviews" \
+  --jq '.[] | select(.state == "PENDING") | .id'
+
+# Submit it (COMMENT, APPROVE, or REQUEST_CHANGES)
+gh api -X POST \
+  "/repos/$OWNER/$REPO/pulls/$PR/reviews/$PENDING_ID/events" \
   -f event=COMMENT
 ```
 
-Notes:
-- `side=RIGHT` points to the new version of the file (the PR's changes).
-  Use `LEFT` only when commenting on lines being removed.
-- For multi-line comments, add `-F start_line=N` and `-f start_side=RIGHT`.
-- `line` must be a line touched by the diff, or GitHub rejects the comment.
-  When the right line is not in the diff, anchor to the nearest changed line
-  and reference the intended line in the body.
+The single-POST approach (Approach 2) avoids this problem entirely.
 
 ### MCP recipe (when the GitHub MCP server is connected)
 
@@ -372,8 +445,6 @@ Notes:
    `body`).
 3. `pull_request_review_write` with `method: "submit_pending"` and
    `event: COMMENT | APPROVE | REQUEST_CHANGES`.
-
----
 
 ## Friction Pass (self-review and artifact review)
 

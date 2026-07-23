@@ -17,6 +17,7 @@ Code review with a strong point of view. Fights complexity, cognitive load,
 split-brain, and content that doesn't solve the root problem.
 
 Three modes:
+
 - **PR review**: Socratic questions for others' PRs. Posts comments after your approval.
 - **Self-review**: detailed findings for your own code before pushing.
 - **Artifact review**: detailed findings for a plan, spec, doc, single file, or pasted text.
@@ -29,6 +30,7 @@ Infer the mode from the request. If it cannot be inferred unambiguously, ask
 once, then proceed.
 
 Inference rules:
+
 - PR number, PR URL, "review PR", "check this PR" => **PR review**.
 - "review my code", "review my branch", "self-review", no target given but a
   working branch with diff vs. base exists => **self-review**.
@@ -60,6 +62,7 @@ artifact review on that content.
 
 Never post without explicit user approval. Always present findings first,
 wait for confirmation, then post. The user may:
+
 - "post all": post every comment as-is.
 - "drop 2, 4": discard specific comments.
 - "reword 3 to ...": change the wording before posting.
@@ -98,8 +101,8 @@ skill files, configs, single source files, pasted text.
    is obvious from the artifact (clearly-labeled PRD, RFC heading, a
    `SKILL.md`, etc.). Otherwise ask one line: "What is this for?"
 2. Read the artifact in full. Follow internal references (linked docs,
-   referenced files) when something cannot be evaluated without them.
 3. Apply the review lens. Skip items tagged *(code)* unless the artifact is
+referenced files) when something cannot be evaluated without them.
    source code. Lens tags are the single source of truth for what applies.
 4. Present findings in the card format. Use `section`, `heading`, or a short
    quoted phrase as the locator when there are no line numbers.
@@ -171,7 +174,28 @@ reference items by slug.
    - Indirection limit: 3+ hops (A → B → C → D) to do something simple is
      too deep. The line between extensible and over-engineered is measured in
      calls, not patterns.
-10. **dx**: treat every API, function, module, CLI flag, config key, error
+10. **maintainability** *(code)*: will the next person (you, an agent, a
+    contractor) understand and change this without touching adjacent code?
+    Each analyzed part should be easy to maintain. Checks:
+    - **Change isolation**: can you modify one behavior without fear of
+      breaking another? Tightly coupled modules, shared mutable state, or
+      functions with 5+ side effects break isolation. If changing X requires
+      also changing Y and testing Z, the boundary is wrong.
+    - **No hidden dependencies**: does this part rely on environment state,
+      global config, network services, or other modules' internals without
+      declaring it? Undeclared coupling surfaces as "works on my machine"
+      or breaks when the dependency changes its private contract.
+    - **Debug traceability**: when something goes wrong, can you follow a
+      clear path from symptom to cause? Opaque error messages, swallowed
+      exceptions, or deeply nested callbacks without context make debugging
+      archaeology instead of tracing.
+    - **No architectural surprise**: does this part behave the way its name,
+      location, and callers predict? Hidden state machines, implicit ordering
+      requirements, or side-channel communication are maintenance traps.
+    - **Tooling-friendly**: does grep/LSP/rename work correctly here? Code
+      that uses string-based dispatch, dynamic property access, or eval to
+      connect parts defeats every IDE feature and makes bulk changes risky.
+11. **dx**: treat every API, function, module, CLI flag, config key, error
     message, doc section, and plan step as a product with consumers (other
     devs, your future self, AI agents). Good DX compounds; bad DX is a tax
     paid on every change. Universal checks:
@@ -203,19 +227,19 @@ reference items by slug.
       path or version bump.
     - **Documentation at the boundary**: public functions/types without
       docstrings, missing examples, README out of sync with behavior.
-11. **defensive-code** *(code)*: flag runtime guards that the type system or
+12. **defensive-code** *(code)*: flag runtime guards that the type system or
     OOP design should make unnecessary: redundant null/undefined checks,
     re-validating well-typed inputs, "just in case" try/catches, shape checks
     on internal calls. Push validation to true boundaries (user input,
     external APIs, deserialization). Prefer types, constructors, and
     factories that make invalid states unrepresentable over another `if`.
-12. **magic-literals** *(code)*: flag string/numeric literals carrying meaning
+13. **magic-literals** *(code)*: flag string/numeric literals carrying meaning
     that is repeated, compared, or branched on across the codebase: statuses,
     roles, event types, config keys, limits, timeouts, sentinel IDs. Replace
     with a named constant, enum, or typed value. One-off literals at a single
     site are fine; the smell is meaning without a name, or the same literal
     appearing in two places that must agree.
-13. **future-pain**: will this force manual steps every time something is
+14. **future-pain**: will this force manual steps every time something is
     added? (Enums requiring migrations, lists requiring remembering to
     update, doc sections that must be edited in lockstep.)
     - **Postgres enums** *(code, stack-conditional)*: flag every time when
@@ -223,23 +247,23 @@ reference items by slug.
       renaming/removing is even worse. Suggest `text` + a `CHECK` constraint
       or a lookup table. Application-level enums (Rails, Ecto) backed by
       `text`/`varchar` are fine.
-14. **refactoring** *(code)*: existing code that could be improved while
+15. **refactoring** *(code)*: existing code that could be improved while
     we're here.
-15. **design-system** *(code, stack-conditional)*: if the project has a design
+16. **design-system** *(code, stack-conditional)*: if the project has a design
     system, component library, or Storybook, flag ad-hoc UI components,
     one-off buttons, custom modals, inline styles, or duplicated layout
     primitives that could either reuse an existing design system component
     or be promoted into the system. Check `components/ui`, `packages/ui`,
     `*.stories.*`, or wherever the system lives before commenting. If there
     is no design system, skip this lens.
-16. **ai-slop**: content that looks suspiciously generated: over-commented,
+17. **ai-slop**: content that looks suspiciously generated: over-commented,
     unnecessary abstractions, generic variable names, boilerplate that adds
     nothing. Specific tells: 30-line block comments explaining a 3-line
     constant; comments that say WHY NOT instead of restructuring the code
     so the why-not does not exist; `// Note:` prefixes; comments that
     restate the variable name in prose; em-dash-heavy prose; "it's worth
     noting"; "essentially/fundamentally/ultimately" filler.
-17. **performance-security** *(code)*: only when it is a real and present
+18. **performance-security** *(code)*: only when it is a real and present
     concern, not premature optimization.
 
 Numbers above are presentational only; if you add a new lens between two
@@ -271,6 +295,7 @@ Two registers, picked by mode.
 ### Self-review and artifact-review register: direct, detailed
 
 No Socratic questions.
+
 - Explain the problem clearly.
 - State why it matters (which principle it violates).
 - Give a concrete suggestion for fixing it.
@@ -278,6 +303,7 @@ No Socratic questions.
 ### Universal rules (every comment, every finding, every section of prose)
 
 **Do:**
+
 - Ultra-short. One sentence or a question fragment.
 - Idiomatic and natural. Reference patterns by their common names.
 - Provide examples of better approaches when suggesting alternatives.
@@ -285,6 +311,7 @@ No Socratic questions.
 - Occasionally blunt when something is obviously wrong: "what?", "magic string".
 
 **Never:**
+
 - Em dash (`—`). The single biggest AI tell. Use a period, comma, colon, or restructure.
 - Hedging: "you might consider", "perhaps it would be beneficial", "could be simplified", "might be worth revisiting".
 - Generic praise: "great job on...".
@@ -301,6 +328,7 @@ No Socratic questions.
 
 Start with diff + full files touched (or the artifact + linked references).
 Go deeper when:
+
 - A new abstraction is introduced: check if it duplicates something existing.
 - Data model changes: check related models for consistency.
 - Business logic changes: look at tests, check callers.
@@ -309,6 +337,7 @@ Go deeper when:
 
 **Large PRs (or large artifacts).** When the target exceeds what you can
 read in full:
+
 1. Read diff stats / table of contents first.
 2. Pick the highest-risk surfaces: new abstractions, data model, business
    logic, public APIs, security-touching code, plan sections that drive
@@ -437,6 +466,15 @@ gh api -X POST \
 
 The single-POST approach (Approach 2) avoids this problem entirely.
 
+Notes:
+
+- `side=RIGHT` points to the new version of the file (the PR's changes).
+  Use `LEFT` only when commenting on lines being removed.
+- For multi-line comments, add `-F start_line=N` and `-f start_side=RIGHT`.
+- `line` must be a line touched by the diff, or GitHub rejects the comment.
+  When the right line is not in the diff, anchor to the nearest changed line
+  and reference the intended line in the body.
+
 ### MCP recipe (when the GitHub MCP server is connected)
 
 1. `pull_request_review_write` with `method: "create"` and no `event` to
@@ -548,6 +586,7 @@ would pick and why.
 ## Agent Compatibility
 
 Requires an agent that can:
+
 - Read files and diffs.
 - Execute bash commands (git, gh CLI), or call equivalent MCP tools.
 - Present findings and wait for user input before posting.

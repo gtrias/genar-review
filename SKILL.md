@@ -52,11 +52,43 @@ artifact review on that content.
 2. Read full files touched. Dig deeper (follow imports, check callers, look
    at related code) when something smells off: new abstractions, shared
    state, enums, business logic changes.
-3. Apply the review lens (see below).
-4. Present findings in the card format.
-5. Wait for user confirmation. They may say "post all", "drop 3", "reword 2
+3. Trace changed contracts end to end using the procedure below.
+4. Apply the review lens (see below).
+5. Present findings in the card format.
+6. Wait for user confirmation. They may say "post all", "drop 3", "reword 2
    to X", etc.
-6. Post approved comments using the recipe in **Posting PR Comments** below.
+7. Post approved comments using the recipe in **Posting PR Comments** below.
+
+### 3. Trace changed contracts end to end
+
+For every changed route, identifier, status, event, API call, or public type, trace the value from origin to final consumer. Do not stop at the changed file; boundary bugs usually live in unchanged destination code.
+
+Use the strongest available code intelligence for the repository:
+
+1. Repository-specific semantic memory or code-intelligence MCP.
+2. Configured project navigation/search tools such as Compass.
+3. LSP for definitions, references, implementations, and type information.
+4. AST search.
+5. Text search as a last resort.
+
+Do not assume a specific tool exists. Detect available capabilities first. Code intelligence locates the chain; the reviewer still compares domain meaning because identical static types can represent different identifiers.
+
+For changed routes and identifiers, follow:
+
+`producer → router/caller → destination page/component → resolver/helper → API or database boundary`
+
+Record the contract before finalizing the review:
+
+```text
+Produced: cart session ID
+Consumed by: result page [id]
+Resolver expects: booking UUID
+Required conversion: cart session ID → booking.id
+```
+
+Check success, error, loading, retry, and fallback paths. A review is incomplete when a changed route or business symbol has only been inspected locally.
+
+
 
 ### Approval Flow (PR mode only)
 
@@ -157,6 +189,11 @@ reference items by slug.
 4. **single-source-of-truth**: any split-brain risk? Duplicated state, logic,
    or claims that must agree across places?
 5. **root-cause**: is this solving the actual problem or papering over symptoms?
+5a. **contract-integrity** *(code)*: do changed routes, identifiers, statuses,
+   API calls, and events satisfy every downstream consumer's semantic contract?
+   Static types are insufficient when two domain identifiers are both strings.
+   Trace producer → router/caller → destination → resolver/helper → API or
+   database boundary, and flag mismatches.
 6. **dead-content**: anything unused, unreferenced, or obsolete landing?
    Examples: unused code, orphan sections, dead links, stale claims.
 7. **tests** *(code)*: business logic changed or added without tests? Flag

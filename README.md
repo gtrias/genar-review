@@ -14,10 +14,11 @@ Works with any stack, any language, any agent.
 
 **PR review**
 1. Fetches the PR diff and reads full files touched.
-2. Digs deeper when something smells off (follows imports, checks callers).
-3. Applies the review lens (see `SKILL.md`).
-4. Presents findings with the exact comment text and private rationale.
-5. You approve, edit, or discard. Then it posts via `gh` (or the GitHub MCP backend).
+2. Reads existing comments and reviews from everyone (author included).
+3. Digs deeper when something smells off (follows imports, checks callers).
+4. Applies the review lens (see `SKILL.md`), dropping anything already raised.
+5. Presents findings with the exact comment text and private rationale, plus a list of what it skipped as duplicates.
+6. You approve, edit, or discard. Then it posts via `gh` (or the GitHub MCP backend).
 
 **Self-review**
 1. Detects the base branch and diffs committed, staged, and unstaged changes.

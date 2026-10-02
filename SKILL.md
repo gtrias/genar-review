@@ -49,17 +49,53 @@ artifact review on that content.
 ## PR Review Workflow
 
 1. Fetch PR diff and description via CLI (`gh pr diff`, `gh pr view`).
-2. Read full files touched. Dig deeper (follow imports, check callers, look
+2. Read existing discussion: inline review comments, review bodies, and
+   conversation comments from every participant (author included). See
+   **Reading Existing Comments** below.
+3. Read full files touched. Dig deeper (follow imports, check callers, look
    at related code) when something smells off: new abstractions, shared
    state, enums, business logic changes.
-3. Trace changed contracts end to end using the procedure below.
-4. Apply the review lens (see below).
-5. Present findings in the card format.
-6. Wait for user confirmation. They may say "post all", "drop 3", "reword 2
+4. Trace changed contracts end to end using the procedure below.
+5. Apply the review lens (see below). Drop any finding already raised by
+   someone else, even if worded differently or anchored to a nearby line.
+   Keep a finding only if it adds something new (different consequence,
+   concrete fix where the other comment only names the risk); say what it
+   adds in the **Why** field.
+6. Present findings in the card format. After the cards, list the findings
+   you dropped as duplicates, one line each: `who, file:line, what they
+   raised`.
+7. Wait for user confirmation. They may say "post all", "drop 3", "reword 2
    to X", etc.
-7. Post approved comments using the recipe in **Posting PR Comments** below.
+8. Post approved comments using the recipe in **Posting PR Comments** below.
 
-### 3. Trace changed contracts end to end
+### 2. Reading Existing Comments
+
+Fetch all three sources. Each one misses what the others hold.
+
+```bash
+OWNER=org REPO=repo PR=123
+
+# Inline (line-anchored) review comments.
+gh api --paginate "/repos/$OWNER/$REPO/pulls/$PR/comments" \
+  -q '.[] | "\(.user.login) \(.path):\(.line // .original_line)\n\(.body)\n---"'
+
+# Review bodies (summary text on approve / request changes / comment).
+gh api --paginate "/repos/$OWNER/$REPO/pulls/$PR/reviews" \
+  -q '.[] | select(.body != "") | "\(.user.login) [\(.state)]\n\(.body)\n---"'
+
+# Conversation (issue) comments, including bot reviews.
+gh api --paginate "/repos/$OWNER/$REPO/issues/$PR/comments" \
+  -q '.[] | "\(.user.login)\n\(.body)\n---"'
+```
+
+Also check the PR description: risks the author already documents there
+(rollback notes, known limitations) are not new findings; only comment if
+you propose a fix they did not.
+
+Treat resolved threads and outdated comments (`line` is null) as already
+raised unless the current diff reintroduces the problem.
+
+### 4. Trace changed contracts end to end
 
 For every changed route, identifier, status, event, API call, or public type, trace the value from origin to final consumer. Do not stop at the changed file; boundary bugs usually live in unchanged destination code.
 

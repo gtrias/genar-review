@@ -153,7 +153,8 @@ wait for confirmation, then post. The user may:
 3. Read full files touched. Dig deeper when needed.
 4. Apply the review lens.
 5. Present findings in the card format.
-6. Run the **Friction Pass** and present it as a separate section.
+6. Run the **Friction Pass** and present it as a separate section, ending
+   with the **Architecture Escalation** verdict.
 7. Close with **Suggested Action Sets**.
 
 No posting step. No Socratic questions. Be direct and detailed.
@@ -169,12 +170,13 @@ skill files, configs, single source files, pasted text.
    is obvious from the artifact (clearly-labeled PRD, RFC heading, a
    `SKILL.md`, etc.). Otherwise ask one line: "What is this for?"
 2. Read the artifact in full. Follow internal references (linked docs,
+   referenced files) when something cannot be evaluated without them.
 3. Apply the review lens. Skip items tagged *(code)* unless the artifact is
-referenced files) when something cannot be evaluated without them.
    source code. Lens tags are the single source of truth for what applies.
 4. Present findings in the card format. Use `section`, `heading`, or a short
    quoted phrase as the locator when there are no line numbers.
-5. Run the **Friction Pass** and present it as a separate section.
+5. Run the **Friction Pass** and present it as a separate section, ending
+   with the **Architecture Escalation** verdict.
 6. Close with **Suggested Action Sets**.
 
 No posting step. Be direct and detailed.
@@ -621,6 +623,53 @@ Present as a separate section after the main findings.
 If the implementation was genuinely frictionless, say so in one line and
 stop. Do not manufacture friction to fill the section.
 
+### Architecture Escalation
+
+Close the Friction Pass by deciding whether the friction is local (fix it in
+this change) or architectural (the codebase lacks the right abstraction).
+Architectural friction goes to the `improve-codebase-architecture` skill.
+
+Recommend escalation when any of these holds:
+
+- **Shotgun change**: one logical change touched 3+ unrelated modules, and no
+  existing seam would have contained it.
+- **Shallow modules on the path**: understanding or changing the feature meant
+  bouncing through pass-through modules whose interface is as complex as the
+  implementation (fails the deletion test).
+- **Same friction, again**: the friction point matches a pattern already
+  flagged in earlier reviews, `CONTEXT.md`, or ADRs, so a local fix will not
+  stop it from recurring.
+- **Untestable through the interface**: tests needed heavy mocking or reached
+  into internals because the module offers no usable test surface.
+- **Missing domain concept**: the work kept re-deriving a concept (status
+  rules, pricing, permissions) inline because no module owns it.
+- **High friction overall**: 3+ friction cards, or any single card whose fix
+  is a new seam rather than a rename, helper, or doc line.
+
+Do not escalate for friction a local fix removes (naming, a missing helper,
+a missing doc line, a lint rule). Those stay as friction cards.
+
+Output one of:
+
+```
+## Architecture Escalation
+
+- **Verdict:** escalate
+- **Why:** which signals above fired, with evidence (files, friction cards)
+- **Scope for improve-codebase-architecture:** modules/area to explore first
+```
+
+```
+## Architecture Escalation
+
+- **Verdict:** not needed. one-line reason
+```
+
+On `escalate`, offer to run `improve-codebase-architecture` scoped to that
+area after the review. Do not start it without the user's go-ahead, and do
+not propose interfaces inside the review: that skill's grilling loop owns
+the design.
+
 ---
 
 ## Suggested Action Sets
@@ -652,7 +701,9 @@ Pick which findings go where based on effort vs. payoff, not severity
 alone. A small naming fix that removes a recurring source of confusion can
 belong in Minimal; a large refactor that only pays off in six months
 belongs in Ambitious. Close with a one-line recommendation: which set you
-would pick and why.
+would pick and why. If the Architecture Escalation verdict was `escalate`,
+say whether the recommended set should land before or after the
+architecture work.
 
 ---
 
@@ -663,3 +714,12 @@ Requires an agent that can:
 - Read files and diffs.
 - Execute bash commands (git, gh CLI), or call equivalent MCP tools.
 - Present findings and wait for user input before posting.
+
+## Relationship to definition-of-done
+
+`genar-review` reviews the **work** (a PR, a branch diff, an artifact).
+`definition-of-done` closes the **session**: it runs `genar-review`-style gates
+plus loose ends, memory, skills, mutual understanding, and communication. When
+the user says "review" mid-task, use this skill; when they say "done",
+"tanquem", or "is this ready" at the end of a session, hand off to
+`definition-of-done`.

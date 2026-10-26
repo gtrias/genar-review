@@ -51,7 +51,8 @@ artifact review on that content.
 1. Fetch PR diff and description via CLI (`gh pr diff`, `gh pr view`).
 2. Read existing discussion: inline review comments, review bodies, and
    conversation comments from every participant (author included). See
-   **Reading Existing Comments** below.
+   **Reading Existing Comments** below. If `gtrias` already commented, switch
+   to **Reviewer Identity and Re-review Progress** before anything else.
 3. Read full files touched. Dig deeper (follow imports, check callers, look
    at related code) when something smells off: new abstractions, shared
    state, enums, business logic changes.
@@ -94,6 +95,45 @@ you propose a fix they did not.
 
 Treat resolved threads and outdated comments (`line` is null) as already
 raised unless the current diff reintroduces the problem.
+
+### Reviewer Identity and Re-review Progress
+
+The current reviewer is the user's GitHub login: `gtrias`. Confirm with
+`gh api user -q .login` if in doubt (e.g. another account is authenticated).
+PR author is `gh pr view --json author -q .author.login`.
+
+Classify every existing comment by who wrote it:
+
+- **Reviewer comments** (`gtrias`): the user's own prior feedback. These are
+  the checklist for a re-review.
+- **Author replies**: comments by the PR author, including replies in the
+  reviewer's threads (`in_reply_to_id`) and the PR description.
+- **Others** (humans, bots): context only.
+
+Detect re-review mode: the reviewer has at least one prior comment or review
+on the PR. In that mode:
+
+1. Do not run a fresh full review first. Build a progress table, one row per
+   reviewer comment: `comment | author reply | commit that addressed it | status`.
+2. Status is one of `fixed`, `partially fixed`, `not addressed`, `disputed`
+   (author disagreed or deferred). Verify against the current head diff and
+   the commits since the reviewer's last review
+   (`gh api /repos/$OWNER/$REPO/pulls/$PR/reviews` gives `submitted_at` and
+   `commit_id`; compare with `headRefOid`). A reply saying "fixed" is a claim,
+   not evidence: read the code.
+3. Review only what changed since the reviewer's last `commit_id`
+   (`git diff <last_commit>..HEAD`) for new findings. Findings in unchanged
+   code the reviewer already saw and did not flag are not new.
+4. Check CI (`gh pr view --json statusCheckRollup,mergeStateStatus`) and
+   `reviewDecision`.
+5. Close with a verdict: approve, or the exact open items blocking approval.
+   Gaps found beyond the reviewer's own comments are listed separately as
+   optional follow-ups, never as blockers unless they are correctness
+   regressions introduced by the fixes.
+
+When the user says "check all was tackled and can we approve", run exactly
+this mode and skip the card format. Approval uses `gh pr review --approve`
+with a body that states which comments were verified and lists follow-ups.
 
 ### 4. Trace changed contracts end to end
 

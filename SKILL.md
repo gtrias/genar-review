@@ -747,6 +747,22 @@ architecture work.
 
 ---
 
+## Closing Line: PR Link
+
+Whenever a review or a fix report touches a PR (findings presented, comments
+posted, approval given, review fixes pushed, threads replied to or resolved),
+end the final message with the PR URL on its own line, as the very last line:
+
+```
+PR: https://github.com/<owner>/<repo>/pull/<number>
+```
+
+Get it with `gh pr view <number> --json url -q .url`; never make up the URL.
+Skip it only when no PR exists (self-review of an unpushed branch, artifact
+review).
+
+---
+
 ## Agent Compatibility
 
 Requires an agent that can:
